@@ -1,10 +1,8 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
 const cors = require('cors');
-require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // 中间件
 app.use(cors());
@@ -17,36 +15,20 @@ const DATABASE_NAME = "gamedata";
 let db;
 let client;
 
-// 连接MongoDB并测试
-async function testMongoDB() {
+// 连接MongoDB
+async function connectMongoDB() {
+    if (db) return db;
+    
     try {
         console.log('🔄 正在连接MongoDB...');
         client = new MongoClient(MONGO_URI);
         await client.connect();
-        
         console.log('✅ 成功连接到MongoDB Atlas!');
-        
         db = client.db(DATABASE_NAME);
-        
-        // 测试数据库操作
-        const collections = await db.listCollections().toArray();
-        console.log('📋 数据库中的集合:', collections.map(c => c.name));
-        
-        // 测试sessions集合
-        const sessionsCollection = db.collection('sessions');
-        const count = await sessionsCollection.countDocuments();
-        console.log(`📊 sessions集合中有 ${count} 条记录`);
-        
-        // 获取一条示例数据
-        if (count > 0) {
-            const sample = await sessionsCollection.findOne();
-            console.log('📄 示例数据:', JSON.stringify(sample, null, 2));
-        }
-        
-        return true;
+        return db;
     } catch (error) {
         console.error('❌ MongoDB连接失败:', error.message);
-        return false;
+        throw error;
     }
 }
 
@@ -54,7 +36,7 @@ async function testMongoDB() {
 app.get('/', (req, res) => {
     res.json({
         message: '🎮 UE5游戏数据API服务器',
-        database: db ? 'Connected' : 'Disconnected',
+        status: 'running',
         timestamp: new Date().toISOString()
     });
 });
@@ -62,19 +44,11 @@ app.get('/', (req, res) => {
 // 数据库状态检查接口
 app.get('/api/db-status', async (req, res) => {
     try {
-        if (!db) {
-            return res.status(500).json({
-                status: 'disconnected',
-                message: '数据库未连接'
-            });
-        }
+        const database = await connectMongoDB();
+        await database.admin().ping();
         
-        // 测试数据库连接
-        await db.admin().ping();
-        
-        // 获取集合信息
-        const collections = await db.listCollections().toArray();
-        const sessionsCount = await db.collection('sessions').countDocuments();
+        const collections = await database.listCollections().toArray();
+        const sessionsCount = await database.collection('sessions').countDocuments();
         
         res.json({
             status: 'connected',
@@ -95,11 +69,9 @@ app.get('/api/db-status', async (req, res) => {
 // 获取所有数据
 app.get('/api/sessions', async (req, res) => {
     try {
-        if (!db) {
-            return res.status(500).json({ error: '数据库未连接' });
-        }
+        const database = await connectMongoDB();
+        const sessions = await database.collection('sessions').find({}).toArray();
         
-        const sessions = await db.collection('sessions').find({}).toArray();
         res.json({
             success: true,
             count: sessions.length,
@@ -113,21 +85,29 @@ app.get('/api/sessions', async (req, res) => {
     }
 });
 
-// 启动服务器
-async function startServer() {
-    const connected = await testMongoDB();
-    
-    app.listen(PORT, () => {
-        console.log(`🚀 服务器运行在端口 ${PORT}`);
-        console.log(`📡 测试地址:`);
-        console.log(`   http://localhost:${PORT} - 服务器信息`);
-        console.log(`   http://localhost:${PORT}/api/db-status - 数据库状态`);
-        console.log(`   http://localhost:${PORT}/api/sessions - 查看所有数据`);
+// 接收游戏数据
+app.post('/api/sessions', async (req, res) => {
+    try {
+        const database = await connectMongoDB();
+        const gameData = req.body;
         
-        if (!connected) {
-            console.log('⚠️  数据库连接失败，但服务器仍在运行');
-        }
-    });
-}
+        // 添加时间戳
+        gameData.createdAt = new Date();
+        
+        const result = await database.collection('sessions').insertOne(gameData);
+        
+        res.json({
+            success: true,
+            message: '数据保存成功',
+            insertedId: result.insertedId
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 
-startServer().catch(console.error);
+// Vercel 导出
+module.exports = app;
