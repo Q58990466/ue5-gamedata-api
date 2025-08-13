@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>外部实验详情查看器</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="top-banner" class="top-banner hidden"></div>
+
+  <header class="header">
+    <div class="container">
+      <h1 class="title">外部实验详情查看器</h1>
+      <p class="subtitle" id="subtitle">用于展示单个实验会话详情</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="grid">
+      <div class="column">
+        <article class="card">
+          <h2 class="card-title">基础信息</h2>
+          <div class="info-row"><span>Session ID</span><span id="sessionId">-</span></div>
+          <div class="info-row"><span>用户 ID</span><span id="userId">-</span></div>
+          <div class="info-row"><span>会话名称</span><span id="sessionName">-</span></div>
+          <div class="info-row"><span>时间</span><span id="timeInfo">-</span></div>
+          <div class="info-row"><span>来源</span><span id="sourceInfo">-</span></div>
+        </article>
+
+        <article class="card">
+          <h2 class="card-title">表情统计</h2>
+          <div class="progress-group">
+            <div class="progress-row">
+              <span class="progress-label">微笑</span>
+              <span class="progress-value" id="smileValue">-</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill smile" id="smileBar" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="progress-group">
+            <div class="progress-row">
+              <span class="progress-label">中性</span>
+              <span class="progress-value" id="neutralValue">-</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill neutral" id="neutralBar" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="progress-group">
+            <div class="progress-row">
+              <span class="progress-label">惊讶</span>
+              <span class="progress-value" id="surprisedValue">-</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill surprised" id="surprisedBar" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="info-row total">
+            <span>识别条目总数</span>
+            <span id="totalExpressionCount">-</span>
+          </div>
+        </article>
+      </div>
+
+      <div class="column">
+        <article class="card">
+          <h2 class="card-title">对话记录</h2>
+          <div id="chatList" class="chat-list empty">无记录</div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <span>前端静态页 · 接口按需配置</span>
+    </div>
+  </footer>
+
+  <script src="./app.js" defer></script>
+  <noscript>需要启用 JavaScript 才能查看内容</noscript>
+</body>
+</html> 
